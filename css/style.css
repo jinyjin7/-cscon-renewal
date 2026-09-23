@@ -1,0 +1,1169 @@
+/* =========================================================================
+   창성씨앤씨건설 — 메인 페이지 시안
+   ========================================================================= */
+
+:root {
+  --ink:        #1b1d20;
+  --ink-2:      #25282c;
+  --concrete:   #e6e4df;
+  --paper:      #f4f3f0;
+  --line:       #9a9892;
+  --line-dark:  #4a4e54;
+  --text:       #1b1d20;
+  --text-dark:  #eceae5;
+  --muted:      #6b6a66;
+  --muted-dark: #9ea2a8;
+  --brand:      #005aab;
+  --brand-2:    #00a651;
+  --alert:      #e0712c;
+  --iso-shade:  #d6d4cf;
+  --iso-shade-r: #c3c1bb;
+  /* --muted(#6b6a66)를 --concrete(#e6e4df) 바탕에 바로 얹으면 대비가 4.26:1로
+     §5 요구사항(본문 4.5:1 이상)에 못 미친다. 토큰 원본은 --muted 그대로 두고,
+     콘크리트 배경 위에서만 --muted 75% + --text 25%로 살짝 어둡게 섞은 값을 쓴다
+     (--paper처럼 더 밝은 카드 위의 --muted는 이미 4.88:1로 기준을 満족하므로 그대로 둔다). */
+  --muted-on-concrete: #575754; /* color-mix 미지원 브라우저 대비 폴백(고정값) */
+  --muted-on-concrete: color-mix(in srgb, var(--muted) 75%, var(--text) 25%);
+
+  --font-body: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+
+  --max-width: 1240px;
+  --gutter: 20px;
+  /* §M2: 로고 확대에 맞춰 헤더 높이도 키움(390 기준 76~84px 범위 안의 80px).
+     sticky 섹션 top/height, hero 상단 패딩이 모두 이 변수를 참조하므로
+     여기 값만 바꾸면 전체가 함께 맞춰진다. */
+  --header-h: 80px;
+}
+
+@media (min-width: 900px) {
+  :root {
+    --gutter: 48px;
+    /* §M2: 1440 기준 96~104px 범위 안의 100px */
+    --header-h: 100px;
+  }
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* 한국어 단어 중간 줄바꿈 방지(B1). overflow-wrap:anywhere 는 공백이 없는 긴 라틴 문자열
+     (이메일 등)이 넘칠 때만 안전하게 꺾는 보조 장치 — 대부분의 한국어 어절은 keep-all 이 지킨다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+h1, h2, h3, p { margin: 0; }
+table { border-collapse: collapse; }
+
+/* 시각적으로 숨기되 스크린리더에는 노출(§C2 등에서 사용).
+   width:100% 같은 컴포넌트 규칙(예: .warranty__table)이 캐스케이드 순서상 나중에 와도
+   항상 이겨야 하는 유틸리티 클래스라 !important 를 쓴다 — 안 그러면 숨긴 표가
+   실제로는 넓게 렌더돼 모바일 가로 스크롤을 만든다(§D 검증 중 발견한 실제 버그). */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  /* <table>은 auto 레이아웃에서 내용의 min-content 때문에 width:1px 을 무시하고
+     넓게 렌더될 수 있다 — fixed 레이아웃으로 강제해야 실제로 1px 이 된다. */
+  table-layout: fixed !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--brand);
+  color: #fff;
+  padding: 10px 16px;
+  z-index: 200;
+}
+.skip-link:focus { left: 8px; top: 8px; }
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  /* §K2: 섹션 라벨류 실제 렌더 14px 이상 */
+  font-size: 14px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.section--dark .mono-label { color: var(--muted-dark); }
+.section--light .mono-label { color: var(--muted-on-concrete); }
+
+/* mono-label과 같은 자리에 쓰이지만 내용이 한국어인 경우(§B2/§H4) — 자간 없이 Pretendard */
+.field-label {
+  font-family: var(--font-body);
+  /* §K2: 섹션 라벨류 실제 렌더 14px 이상 */
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.section--dark .field-label { color: var(--muted-dark); }
+.section--light .field-label { color: var(--muted-on-concrete); }
+
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+/* 섹션 H2 크기·아래 여백을 전 섹션에서 통일(§C6). services__head h2 처럼
+   더 구체적인 선택자가 이미 있는 곳은 그대로 우선 적용된다. */
+/* §K2: 1440에서 실제 56px 이상(4vw=57.6px), 390에서는 최솟값 34px로 클램프 */
+.section h2 { font-size: clamp(34px, 4vw, 58px); margin-bottom: 20px; }
+
+/* §M2: 고정 헤더 높이가 커져도 앵커 이동(#contact 등) 시 제목이 헤더 밑에
+   가려지지 않도록 헤더 높이만큼 스크롤 여유를 둔다. */
+.section { position: relative; padding: 120px 0; scroll-margin-top: var(--header-h); }
+.section--dark { background: var(--ink); color: var(--text-dark); }
+.section--light { background: var(--concrete); color: var(--text); }
+.section--dark h2, .section--dark h3 { color: var(--text-dark); }
+
+.section--seam { border-top: 1px solid var(--line-dark); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.btn--brand { background: var(--brand); color: #fff; }
+.btn--brand:hover { background: #004b8f; }
+.btn--outline {
+  border-color: currentColor;
+  color: inherit;
+}
+.section--dark .btn--outline:hover { background: rgba(255,255,255,.06); }
+.section--light .btn--outline:hover { background: rgba(0,0,0,.04); }
+
+.btn--cta {
+  background: var(--brand);
+  color: #fff;
+  padding: 10px 18px;
+  font-size: 13px;
+  border-radius: 3px;
+}
+.btn--cta:hover { background: #004b8f; }
+.btn--cta__icon { display: none; align-items: center; }
+
+/* =========================================================================
+   스크롤 진행 눈금자
+   ========================================================================= */
+.scroll-ruler {
+  position: fixed;
+  right: 14px;
+  bottom: 24px;
+  z-index: 60;
+  height: min(46vh, 420px);
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.scroll-ruler__ticks {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  height: 100%;
+  gap: 1px;
+}
+.ruler-tick {
+  width: 10px;
+  height: 1px;
+  background: var(--line);
+  margin-left: auto;
+  transition: background .15s linear, width .15s linear;
+}
+.section--dark ~ .scroll-ruler .ruler-tick,
+body.tone-dark .ruler-tick { background: var(--line-dark); }
+.ruler-tick.is-active {
+  width: 20px;
+  background: var(--brand);
+}
+@media (max-width: 599px) {
+  .scroll-ruler { display: none; }
+}
+
+/* =========================================================================
+   헤더
+   ========================================================================= */
+/* §E1: 헤더는 스크롤·섹션 톤과 무관하게 항상 흰 배경으로 고정한다(톤 전환 제거). */
+.site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid var(--concrete);
+}
+.site-header__inner {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.site-header__logo { flex-shrink: 0; }
+.logo-chip {
+  display: inline-flex;
+  align-items: center;
+}
+/* §M2: 원본 285:60 비율 유지, height 만 지정해 width:auto 로 비율 유지.
+   390: 40px(→약 190px 폭, 185~195px 목표). ≥900px: 54px(→약 256.5px 폭, 250~260px 목표). */
+.logo-chip img { height: 40px; width: auto; }
+@media (min-width: 900px) {
+  .logo-chip img { height: 54px; }
+}
+
+.site-nav { flex: 1; display: none; justify-content: center; }
+.site-nav ul { display: flex; gap: 28px; }
+.site-nav a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 6px 2px;
+  border-bottom: 1px solid transparent;
+}
+.site-nav a:hover,
+.site-nav a.is-current { color: var(--brand); border-bottom-color: var(--brand); }
+
+.site-header__actions { display: flex; align-items: center; gap: 12px; }
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+}
+.hamburger span {
+  width: 20px;
+  height: 1.5px;
+  background: var(--ink);
+  transition: transform .2s ease, opacity .2s ease;
+}
+.hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+@media (min-width: 900px) {
+  .site-nav { display: flex; }
+  .hamburger { display: none; }
+  .btn--cta__icon { display: none; }
+}
+@media (max-width: 899px) {
+  .btn--cta__label { display: none; }
+  .btn--cta { padding: 10px; border-radius: 50%; }
+  .btn--cta__icon { display: inline-flex; }
+}
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility .25s ease;
+}
+.mobile-menu.is-open { opacity: 1; visibility: visible; }
+.mobile-menu ul { display: flex; flex-direction: column; gap: 28px; text-align: center; }
+.mobile-menu a { font-size: 26px; font-weight: 700; color: var(--ink); }
+
+/* =========================================================================
+   3.1 히어로
+   ========================================================================= */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: calc(var(--header-h) + 40px);
+  padding-bottom: 60px;
+  overflow: hidden;
+}
+.hero__inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.hero__text { max-width: 560px; }
+.hero__title {
+  /* §M1: "진단부터 보수까지"가 hero__text(max-width:560px) 안에서 1440 기준
+     한 줄에 들어가야 해서 clamp 상한을 104px→78px로 낮췄다(실측: 78px일 때
+     543px, 80px부터 557px로 560px 한도에 너무 바짝 붙어 78px로 여유를 둠).
+     390은 7vw(27.3px)가 최솟값(44px)보다 작아 그대로 44px 적용, 영향 없음. */
+  font-size: clamp(44px, 7vw, 78px);
+  margin: 8px 0 20px;
+}
+.hero__subtitle {
+  /* §P1: 어두운 배경(#1b1d20)에서 브랜드 블루(#005aab)는 실측 대비 약 2.2:1로
+     너무 낮아 오히려 안 보인다. 흰 글자+브랜드색 칩(대비 6.88:1)과 비교해,
+     어두운 배경용 밝은 블루 #6bb6ff 를 텍스트에 직접 쓰는 쪽이 대비 7.85:1로
+     더 확실하고 칩 배경 없이도 CTA 버튼과 시각적으로 겹치지 않아 이 방식을
+     선택했다(노드 스크립트로 WCAG 상대휘도 공식 검증). §K2 26px → 1440
+     실제 32px 이상(2vw 상한 40px), 390 실제 24px(하한)로 확대. */
+  font-size: clamp(24px, 2.4vw, 40px);
+  font-weight: 700;
+  color: #6bb6ff;
+  margin-bottom: 14px;
+}
+/* "25년차" 숫자 부분만 한 번 더 강조 — 흰색(대비 16.9:1)+살짝 더 크게 */
+.hero__subtitle-strong {
+  color: #ffffff;
+  font-size: 1.15em;
+  font-weight: 800;
+}
+.hero__body {
+  /* §K2: 히어로 바디 1440 기준 20px 이상 */
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--muted-dark);
+  margin-bottom: 32px;
+  max-width: 46ch;
+}
+.hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.hero__actions .btn--outline { color: var(--text-dark); }
+
+.hero__figure {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.hero-svg { width: 100%; max-width: 460px; height: auto; }
+.hero__scan-caption {
+  position: absolute;
+  left: 8px;
+  bottom: 4px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  /* §Q5: 어두운 배경(#1b1d20) 위에서 진짜 "어두운" 빨강(예: #8f2727 대비 2.0:1,
+     #c0392b 대비 3.11:1)은 4.5:1을 넘지 못한다 — 채도를 낮춰(s≈50%) 살짝
+     밝기를 올린 #cc6666(대비 4.55:1)가 눈에 띄게 밝은 네온레드(#ff2929류,
+     대비 4.51:1)보다는 "어두운 톤"에 가까우면서 4.5:1을 만족하는 절충값이다.
+     더 어두운 톤을 원하면 #c0392b(대비 3.11:1, 3:1은 충족)도 대안으로 있다. */
+  color: #cc6666;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.hero__scan-caption.is-visible { opacity: 1; }
+
+.struct-line { stroke: var(--line-dark); stroke-width: 1.5; fill: none; stroke-linecap: square; }
+.member-line { stroke: var(--line-dark); stroke-width: 1; fill: none; opacity: .9; }
+.hatch-line { stroke: var(--line-dark); stroke-width: .5; opacity: .5; }
+.hatch-line--roof { opacity: .7; }
+.dim-line, .dim-ext, .dim-tick {
+  stroke: var(--muted-dark);
+  stroke-width: .75;
+  fill: none;
+}
+.floor-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  fill: var(--text-dark);
+}
+.floor-label--gl { fill: var(--muted-dark); }
+
+.hero-scan { pointer-events: none; }
+.scan-band { fill: var(--brand); opacity: .12; }
+.scan-line { stroke: var(--brand); stroke-width: 1; }
+
+.defect-marker { pointer-events: none; }
+.defect-dot { fill: var(--ink); stroke: var(--alert); stroke-width: 1.5; }
+.defect-cross { stroke: var(--alert); stroke-width: 1; }
+.defect-lead { stroke: var(--alert); stroke-width: .75; stroke-dasharray: 2 2; opacity: .8; }
+.defect-crack { stroke: var(--alert); stroke-width: 1; fill: none; }
+.defect-label {
+  /* 한국어 결함명이 섞여 있으므로 기본은 본문 서체, D-0x 코드만 모노(§B2/§H4).
+     §H5: hero-svg 는 viewBox 600 을 실제 460px(또는 그보다 좁은) 폭에 맞춰 축소
+     렌더하므로, SVG 사용자 단위 폰트 크기를 그대로 쓰면 화면에 찍히는 실제 글자
+     높이가 훨씬 작아진다(11px 지정 → 1440에서 실측 약 8px). 1440 기준 실제 13px
+     이상이 되도록 축소 비율(약 0.767)을 역산해 18px로 올린다. */
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 18px;
+  fill: var(--text-dark);
+}
+.defect-code { font-family: var(--font-mono); fill: var(--alert); font-weight: 500; }
+
+@media (min-width: 900px) {
+  .hero__inner { grid-template-columns: 1.1fr 1fr; }
+  .hero__text { text-align: left; }
+}
+
+/* =========================================================================
+   3.2 분해 도해 — 시공분야
+   ========================================================================= */
+/* §H6: .section 의 공통 상하 패딩(120px/모바일 80px)이 그대로 적용되면 sticky-wrap이
+   시작되기 전까지 이 섹션 자체의 어두운 배경이 그 패딩만큼 그대로 드러나 헤더 바로
+   아래 "어두운 띠"로 보인다(검증 중 재현·확인한 실제 버그 — 촬영 아티팩트 아님).
+   내부 여백은 sticky-wrap/sticky 가 자체적으로 처리하므로 섹션 자체는 패딩 0.
+   태그+클래스(0,1,1)로 명시도를 올려 뒤에 나오는 반응형 .section 규칙(0,1,0)에
+   덮어써지지 않게 한다. */
+.services, section.services { background: var(--ink); color: var(--text-dark); padding: 0; }
+.services__sticky-wrap {
+  height: 300vh;
+  position: relative;
+  /* JS(main.js servicesInit)가 스크롤 진행률에 따라 아래 4개 커스텀 프로퍼티를 갱신한다.
+     배경 전환은 섹션 진입 첫 15% 안에 끝내고(§A4), 나머지 구간은 라이트 배경에서
+     분해 모션만 진행한다 — main.js 의 bgProgress 가 담당. */
+  --sv-bg: #1b1d20;
+  --sv-text: #eceae5;
+  --sv-muted: #9ea2a8;
+  --sv-line: #4a4e54;
+  background: var(--sv-bg);
+  color: var(--sv-text);
+}
+/* §E2: 헤더(흰 네비바, --header-h) 바로 아래부터 뷰포트 끝까지를 정확히 차지한다.
+   그림은 이 패널 전체를 채우고(position:absolute inset:0), 제목·설명은 겹치지 않도록
+   좌상단에 작게 고정한다(그림과 겹치지 않으므로 페이드아웃 없이 계속 보여도 된다). */
+.services__sticky {
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  height: calc(100svh - var(--header-h));
+  max-width: var(--max-width);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.services__head {
+  position: absolute;
+  top: 22px;
+  left: var(--gutter);
+  z-index: 2;
+  max-width: 300px;
+  pointer-events: none;
+}
+.services__head h2 { font-size: 22px; margin-bottom: 8px; color: var(--sv-text); transition: color .25s ease; }
+.services__desc {
+  /* §K2: 분해도해 헤드 설명(본문류) 1440 기준 18px 이상 */
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--sv-muted);
+  margin-bottom: 3px;
+  transition: color .25s ease, opacity .3s ease;
+}
+/* §E2: 분해가 시작되면(그림이 화면을 채우기 시작) 설명 문단을 지워 01번 레이어
+   라벨과 겹치지 않게 한다. 라벨(모노 라벨+H2)은 계속 보인다. */
+.services__head.is-compact .services__desc { opacity: 0; }
+.services .mono-label { color: var(--sv-muted); transition: color .25s ease; margin-bottom: 4px; }
+.services__figure {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.exploded-svg { width: 100%; height: 100%; display: block; }
+
+.iso-part-geo, .iso-part-label { transition: none; }
+.iso-face { stroke: var(--sv-line); stroke-width: 1; transition: stroke .25s ease; }
+.iso-facade, .iso-facade-paint { stroke-width: 1; }
+.iso-pat-line { stroke: var(--sv-muted); stroke-width: .5; transition: stroke .25s ease; }
+.iso-pat-dot { fill: var(--sv-muted); transition: fill .25s ease; }
+/* §H1: 창 개구부는 빈 구멍(뒤가 비쳐 보임) — evenodd 로 실제로 뚫려 있고, 검은 채움이 없다 */
+.iso-window-frame { fill: none; stroke: var(--brand); stroke-width: 1.5; }
+.iso-window-outline { fill: none; stroke: var(--sv-line); stroke-width: 1; }
+.iso-seal-line { stroke: var(--brand); stroke-width: 2; }
+.iso-parapet-lip { fill: none; stroke: var(--sv-line); stroke-width: .75; }
+.iso-roof-slope { stroke-width: 1.2; }
+.iso-gable-end { opacity: .92; }
+.iso-lead { stroke: var(--sv-muted); stroke-width: .75; transition: stroke .25s ease; }
+/* §H3: 라벨 뒤에 섹션 배경색 패딩 박스를 둬서 지시선·도형과 겹치지 않게 한다 */
+.iso-label-bg { fill: var(--sv-bg); transition: fill .25s ease; }
+.iso-label-no,
+.iso-label-name,
+.iso-label-bg {
+  opacity: 0;
+  transition: opacity .35s ease, fill .25s ease;
+}
+.iso-label-no.is-visible,
+.iso-label-name.is-visible,
+.iso-label-bg.is-visible { opacity: 1; }
+.iso-label-no {
+  /* §E2: 1440 기준 13px 이상 요구 — 여유를 두고 15px */
+  font-family: var(--font-mono);
+  font-size: 15px;
+  fill: var(--brand);
+  font-weight: 500;
+}
+.iso-label-name {
+  /* §E2: 1440 기준 20px 이상 요구 — 여유를 두고 24px. §H2: 번호+공사명만, 설명 문구 없음 */
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 22px;
+  fill: var(--sv-text);
+  transition: opacity .35s ease, fill .25s ease;
+}
+
+.services__mobile-list { display: none; }
+@media (max-width: 899px) {
+  .services__sticky-wrap { height: auto; }
+  .services__sticky {
+    position: static;
+    height: auto;
+    display: block;
+    padding: 88px var(--gutter) 48px;
+  }
+  .services__head { position: static; max-width: none; pointer-events: auto; }
+  /* §K2: 900px 미만에서는 코너 오버레이가 아니라 일반 정적 제목으로 보이므로(위 §H6
+     주석 참고, figure 가 static 으로 바뀜) 390 기준 H2 최소치(34px)를 적용한다. */
+  .services__head h2 { font-size: clamp(34px, 6vw, 40px); }
+  /* §K2: 390 기준 본문 17px 이상 */
+  .services__desc { font-size: 17px; line-height: 1.6; }
+  .services__figure {
+    position: static;
+    display: block;
+    margin-top: 16px;
+  }
+  /* §H6: 좌우 거터만 남기고 폭을 꽉 채운다 */
+  .exploded-svg { width: 100%; height: auto; max-width: 100%; display: block; }
+  /* 모바일은 도해 안 라벨을 빼고(§A5) 그림만 보여준다. 라벨은 아래 목록으로 대체. */
+  .iso-lead, .iso-label-no, .iso-label-name, .iso-label-bg { display: none; }
+
+  .services__mobile-list {
+    display: block;
+    padding: 0 var(--gutter) 100px;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    /* 라이트 섹션(§services 는 스크롤 진입 직후 라이트로 전환) 안이므로 다크로 새지 않게
+       배경·글자색을 라이트 톤으로 고정한다. */
+    background: var(--concrete);
+    color: var(--text);
+  }
+  .services__mobile-list ul { display: grid; gap: 10px; }
+  .services__mobile-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    /* §K2: 목록 항목 390 기준 17px 이상 */
+    font-size: 17px;
+  }
+  .services__mobile-list .mono-label { margin: 0; color: var(--brand); }
+}
+
+/* =========================================================================
+   3.3 핵심 업무
+   ========================================================================= */
+.diagnosis__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  margin-top: 8px;
+}
+.diagnosis-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 32px;
+  opacity: 0;
+  transform: translateY(24px);
+}
+.diagnosis-card__no { color: var(--brand); }
+.diagnosis-card__icon { width: 56px; height: 56px; color: var(--text); margin-bottom: 20px; }
+/* §K2: 카드 타이틀 ≥26px, 본문 ≥18px */
+.diagnosis-card h3 { font-size: 26px; margin-bottom: 12px; }
+.diagnosis-card p { font-size: 18px; line-height: 1.6; color: var(--muted); }
+
+@media (min-width: 900px) {
+  .diagnosis__grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* =========================================================================
+   3.4 하자담보책임기간
+   ========================================================================= */
+/* §K2: 1440 실제 56px 이상, 390 최솟값 34px */
+.warranty h2 { font-size: clamp(34px, 4vw, 58px); margin-bottom: 0; }
+.warranty__caption {
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted-on-concrete);
+}
+
+/* ---- 가로 기간자(치수선 스타일) ---- */
+.warranty__ruler { margin: 56px 0 8px; }
+.warranty__ruler-svg { width: 100%; height: auto; display: block; }
+.ruler-axis { stroke: var(--line-dark); stroke-width: 1.5; fill: none; }
+.ruler-tick-sm { stroke: var(--line); stroke-width: 1; }
+.ruler-tick-lg { stroke: var(--line-dark); stroke-width: 1.5; }
+.ruler-marker-dot {
+  fill: var(--paper);
+  stroke: var(--brand);
+  stroke-width: 2;
+  opacity: 0;
+  transition: opacity .3s ease, fill .3s ease;
+}
+.ruler-marker-dot.is-active { opacity: 1; fill: var(--brand); }
+.ruler-marker-label {
+  /* "2년"처럼 한국어가 섞인 라벨이라 본문 서체를 쓴다(§B2/§H4) */
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--text);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.ruler-marker-label.is-active { opacity: 1; }
+.ruler-end-label {
+  font-family: var(--font-body);
+  /* §K2: 작은 캡션류 ≥15px */
+  font-size: 15px;
+  fill: var(--muted-on-concrete);
+}
+
+/* ---- 카드 4장 ---- */
+.warranty__cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin: 40px 0 48px;
+}
+.warranty-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 30px 26px;
+  opacity: 0;
+  transform: translateY(28px);
+}
+.warranty-card__period {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 58px;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.warranty-card__pct-wrap { margin-top: 14px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.warranty-card__pct {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 34px;
+  color: var(--brand);
+}
+.warranty-card__pct-label {
+  font-family: var(--font-body);
+  /* §K2: 작은 캡션류 ≥15px */
+  font-size: 15px;
+  color: var(--muted-on-concrete);
+}
+.warranty-card__divider { border: 0; border-top: 1.5px solid var(--line-dark); margin: 20px 0 16px; }
+/* §K2: 카드 목록 항목 본문 ≥18px */
+.warranty-card__items { font-size: 18px; line-height: 1.6; color: var(--text); }
+
+@media (min-width: 600px) {
+  .warranty__cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .warranty__cards { grid-template-columns: repeat(4, 1fr); }
+  .warranty-card__period { font-size: 64px; }
+}
+
+.warranty__table {
+  width: 100%;
+  border-top: 1.5px solid var(--line-dark);
+  border-bottom: 1.5px solid var(--line-dark);
+  font-size: 13.5px;
+}
+.warranty__table caption {
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--muted-on-concrete);
+  margin-bottom: 8px;
+}
+.warranty__table th, .warranty__table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.warranty__table thead th {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted-on-concrete);
+  border-bottom: 1.5px solid var(--line-dark);
+  white-space: nowrap;
+}
+.warranty__table th:first-child,
+.warranty__table th:nth-child(2) { width: 1%; }
+.warranty__footnote {
+  /* 한국어 문장이므로 모노가 아니라 본문 서체를 쓴다(§B2/§H4) */
+  font-family: var(--font-body);
+  /* §K2: 법적 각주 ≥15px */
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--muted-on-concrete);
+  margin-top: 12px;
+}
+
+/* =========================================================================
+   3.5 청구 절차
+   ========================================================================= */
+/* §O: 제목은 sticky 패널 위쪽 구역에 스크롤과 무관하게 항상 고정 표시되고
+   (§O2, §J1 의 "제목이 사라짐" 연출은 폐기), 8단계는 그 아래 "띠"(.process__band)
+   안에서 두루마리처럼 아래→위로 흘러 지나간다. 서로 다른 두 구역(.process__head /
+   .process__band)을 flex-basis 로 42:58 나누고, 각 구역은 자기 콘텐츠만큼만
+   차지하도록 flex-shrink:0 을 주지 않는다 — 예전 버전은 .process__sticky 에
+   overflow:hidden + justify-content:center 를 걸어 전체(제목+8단계 전부)를
+   가운데 정렬했는데, 헤더가 커지고 여백이 늘면서 합계 높이가 sticky 패널보다
+   커지는 순간 그 초과분이 위아래로 균등하게 "잘려" 제목 위쪽 획이 사라지는 실제
+   버그가 있었다(§O1) — getBoundingClientRect 로 재현해 확인. 이번 구조는 제목
+   구역에 overflow:hidden 을 두지 않고, 자를 필요가 있는 곳(8단계 두루마리)만
+   .process__band 에 국한시켜 제목이 물리적으로 잘릴 수 없게 만든다. */
+.process__sticky-wrap {
+  height: 320vh;
+  position: relative;
+}
+.process__sticky {
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  height: calc(100svh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+}
+.process__head {
+  /* §O2: 헤더 하단(=sticky 패널 상단)과 제목 사이 간격 — 1440 72px / 390 48px.
+     42% 구역 안에서 top-padding 으로 위치를 잡고, 나머지는 자연스러운 컨텐츠
+     높이만 차지한다(overflow 없음 → 절대 잘리지 않음). */
+  flex: 0 0 42%;
+  box-sizing: border-box;
+  padding-top: 72px;
+  text-align: center;
+}
+.process__head .mono-label { font-size: 14px; }
+/* §K2: 1440 실제 56px 이상, 390 최솟값 34px */
+.process__head h2 { font-size: clamp(34px, 4vw, 58px); margin-bottom: 0; }
+
+/* §O2/§O4: 8단계가 지나가는 "띠". 뷰포트(정확히는 sticky 패널) 아래쪽
+   약 58% 를 차지하고, overflow:hidden + mask-image 로 위/아래 가장자리를
+   부드럽게 페이드시켜 두루마리 진입/이탈이 뚝 끊기지 않게 한다. */
+.process__band {
+  flex: 1 1 58%;
+  position: relative;
+  overflow: hidden;
+  /* §Q4: 페이드 구간이 원 지름(72px)보다 좁으면(예전 12% ≈ 56px) 원의 중간
+     어디쯤에서 "반달처럼" 뚝 끊기는 절단선이 생긴다. 페이드 폭을 원 지름보다
+     넉넉히 넓은 90px(px 고정값 — 띠 높이가 바뀌어도 항상 원보다 커야 하므로
+     %가 아니라 px 로 지정)로 늘려 원 전체가 하나의 매끈한 그라데이션 안에서
+     통째로 흐려지게 한다. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 90px, #000 calc(100% - 90px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 90px, #000 calc(100% - 90px), transparent 100%);
+}
+/* max-width 를 없애 .container 의 이중 센터링을 제거 — 위 --num-center 설명 참고 */
+.process__container { height: 100%; position: relative; max-width: none; }
+
+/* 세로선 + 숫자 원이 화면 폭 22% 지점을 지나가고, 문구는 원 오른쪽으로 충분히
+   띄워 왼쪽 정렬로 배치한다(§N3/§O3). --num-gap 은 원 오른쪽 가장자리부터
+   문구까지의 최소 간격(1440 ≥40px, 390 ≥20px). #processTimeline 전체를
+   JS(main.js)가 스크롤 진행률에 따라 translateY 로 밀어 올려 두루마리처럼
+   보이게 한다 — top/bottom padding 은 mask 페이드 구간(12%)과 실제 콘텐츠가
+   겹치지 않도록 두는 여유분이다. */
+.process__timeline {
+  /* §N3/§O3: 세로선·숫자 원이 "화면 폭" 기준 20~24% 지점을 지나가야 한다.
+     .process__container 가 .container 클래스의 max-width(1240px)+auto
+     margin 으로 한 번 더 가운데 정렬되면 좌측 여백이 이중으로 생겨(게이지+
+     센터링) 이 %가 화면 폭이 아니라 좁아진 안쪽 컬럼 기준이 돼 목표보다
+     오른쪽(약 32%)으로 밀리는 문제가 있었다 — 실측으로 확인 후
+     .process__container 의 max-width 를 없애 컨테이너 좌측이 거터(gutter)
+     만큼만 들어가게 만들고, 20%(콘텐츠 폭 기준)로 낮춰 1440에서 실제
+     뷰포트 기준 22%가 되도록 역산했다. */
+  --num-center: 20%;
+  --num-size: 72px;
+  --num-gap: 40px;
+  position: relative;
+  padding: 64px 0;
+  will-change: transform;
+}
+.process__track {
+  position: absolute;
+  left: var(--num-center);
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--line);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+.process__track-fill {
+  width: 100%;
+  height: 0%;
+  background: var(--brand);
+  transform-origin: top;
+}
+.process-step {
+  position: relative;
+  z-index: 1;
+  /* §Q2: 이전에는 padding-bottom 으로 단계 간 간격을 줬는데, box-sizing:border-box
+     라 이 padding 이 .process-step 자신의 박스 높이에 포함되면서, absolute 배치된
+     원(.process-step__num, top:50% 는 padding 포함 박스 기준)과 flex 로 content
+     박스 안에서만 가운데 정렬되는 문구(body) 사이에 padding-bottom 의 절반만큼
+     실제로 중심이 어긋나는 버그가 있었다(1440 실측 -32px, 정확히 64px 의 절반).
+     간격을 margin-bottom 으로 옮기면 이 박스 자체의 높이엔 영향이 없어 두 중심이
+     정확히 같은 기준(순수 content 높이)으로 맞춰진다. */
+  /* §Q3: "단계 사이 간격"은 각 .process-step 박스의 top-to-top 거리를 뜻한다
+     (이전엔 padding-bottom 이 박스 높이에 포함돼 그 자체가 간격이었다 — 그래서
+     "지금 약 110px"은 정확히 이전 코드의 content(~46px)+padding-bottom(64px)
+     이었다). 지금은 박스 높이가 min-height(72px)로 고정이므로, 목표 간격
+     150~170px 중간값 160px 를 내려면 margin-bottom = 160-72 = 88px. */
+  margin-bottom: 88px;
+  padding-left: calc(var(--num-center) + (var(--num-size) / 2) + var(--num-gap));
+  min-height: var(--num-size);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.process-step:last-child { margin-bottom: 0; }
+.process-step__num {
+  position: absolute;
+  left: var(--num-center);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  flex-shrink: 0;
+  width: var(--num-size);
+  height: var(--num-size);
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 28px;
+  background: var(--concrete);
+  transition: background .3s ease, border-color .3s ease, color .3s ease;
+}
+.process-step.is-active .process-step__num {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.process-step__body { text-align: left; width: 100%; }
+.process-step__body h3 {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+/* 구비서류 카드 — sticky 구간이 끝난 뒤 스크롤에 들어오면 나타난다(§K1: 체크박스
+   입력이 아니라 이미 체크된 장식 카드) */
+.process__checklist {
+  max-width: 980px;
+  margin: 64px auto 0;
+  padding: 56px 0 100px;
+  border-top: 1.5px solid var(--line-dark);
+  text-align: left;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.process__checklist.is-visible { opacity: 1; transform: translateY(0); }
+.process__checklist-label {
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 28px;
+  text-align: center;
+}
+.process__checklist-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.doc-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 22px;
+}
+.doc-card__check { flex-shrink: 0; width: 20px; height: 20px; }
+.doc-card span { font-size: 18px; line-height: 1.5; color: var(--text); }
+
+@media (min-width: 640px) {
+  .process__checklist-grid { grid-template-columns: repeat(2, 1fr); column-gap: 20px; }
+}
+@media (min-width: 1024px) {
+  .process__checklist-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* §N3/§O3: 390 — 원 중심은 좌측 44px 부근, 문구는 원 오른쪽 20px 이상 띄우고
+   남는 폭을 전부 사용. §O2: 헤더-제목 간격 48px. */
+@media (max-width: 599px) {
+  .process__sticky-wrap { height: 340vh; }
+  .process__head { padding-top: 48px; }
+  .process__head h2 { font-size: 34px; }
+  /* §Q4: 390 은 원 지름이 48px 이므로 그보다 넉넉한 65px 로 페이드 폭 축소 */
+  .process__band {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 65px, #000 calc(100% - 65px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 65px, #000 calc(100% - 65px), transparent 100%);
+  }
+  .process__timeline {
+    /* §N3: 화면 좌측 44px 부근 — .process__container 거터(20px)를 뺀
+       나머지 24px 를 콘텐츠 기준 오프셋으로 사용(20+24=44px). */
+    --num-center: 24px;
+    --num-size: 48px;
+    --num-gap: 20px;
+    padding: 40px 0;
+  }
+  /* §Q3: 390 기준 간격(top-to-top) 90~110px 목표 — box 높이(min-height 48px)
+     + margin-bottom 52px = 100px. */
+  .process-step { margin-bottom: 52px; }
+  .process-step__num { font-size: 20px; }
+  .process-step__body h3 { font-size: 20px; line-height: 1.35; }
+}
+
+/* =========================================================================
+   3.7 회사소개
+   ========================================================================= */
+/* 회사연혁 — 가로 타임라인(1440), 세로 타임라인(390 이하) */
+.history-timeline-h {
+  position: relative;
+  margin: 48px 0 64px;
+}
+.history-timeline-h__line {
+  position: absolute;
+  top: 8px;
+  left: calc(100% / 12);
+  right: calc(100% / 12);
+  height: 2px;
+  background: var(--line-dark);
+}
+.history-timeline-h__line-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--brand);
+  transition: width .1s linear;
+}
+.history-timeline-h__list {
+  display: flex;
+  gap: 12px;
+  position: relative;
+}
+.history-node {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.history-node.is-visible { opacity: 1; transform: translateY(0); }
+.history-node__dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid var(--line-dark);
+  transition: background .3s ease, border-color .3s ease;
+}
+.history-node.is-visible .history-node__dot { background: var(--brand); border-color: var(--brand); }
+.history-year {
+  font-family: var(--font-mono);
+  /* §K2: 연혁 연도는 서브헤더류로 1440 기준 26px 이상 */
+  font-size: 26px;
+  color: var(--brand);
+}
+/* §K2: 타임라인 목록 항목 본문 ≥18px */
+.history-desc { font-size: 18px; color: var(--muted-dark); line-height: 1.5; padding: 0 4px; }
+.history-node--present { opacity: .85; transform: none; }
+.history-node--present .history-node__dot { background: none; border-style: dashed; }
+.history-node--present .history-year { color: var(--muted-dark); font-size: 28px; }
+
+.about__strip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding-top: 40px;
+  border-top: 1.5px solid var(--line-dark);
+}
+/* §K2: 본문류 ≥18px */
+.strip-item p:last-child { font-size: 18px; color: var(--text-dark); line-height: 1.6; }
+
+@media (min-width: 900px) {
+  .about__strip { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 899px) {
+  .history-timeline-h__line { display: none; }
+  .history-timeline-h__list { flex-direction: column; gap: 0; }
+  .history-node {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+    gap: 16px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line-dark);
+    transform: translateX(-14px);
+  }
+  .history-node.is-visible { transform: translateX(0); }
+  .history-node__dot { flex-shrink: 0; margin-top: 4px; }
+  /* §K2: 390 기준 연혁 연도(서브헤더) ≥20px, 본문 ≥17px. 가로폭이 좁아지므로
+     연도 칼럼 너비를 살짝 늘려 줄바꿈 없이 담는다. */
+  .history-year { flex-shrink: 0; width: 92px; white-space: nowrap; font-size: 20px; }
+  .history-node--present .history-year { font-size: 22px; }
+  .history-desc { padding: 0; font-size: 17px; }
+  .history-node--present { border-bottom: none; padding-bottom: 0; }
+}
+
+/* =========================================================================
+   3.8 문의
+   ========================================================================= */
+.contact__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+}
+.contact__phone-label { margin-top: 24px; }
+.contact__phone {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: clamp(30px, 4.5vw, 68px);
+  font-weight: 500;
+  color: var(--text-dark);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+/* §K2: 작은 캡션류 ≥15px */
+.contact__sub { margin-top: 16px; font-size: 15px; color: var(--muted-dark); line-height: 1.6; }
+.contact__sub a:hover { color: var(--brand); }
+
+.contact__form { display: grid; gap: 18px; }
+.form-row { display: grid; gap: 6px; }
+.form-row label { font-size: 13px; color: var(--muted-dark); }
+.form-row input, .form-row select, .form-row textarea {
+  background: var(--ink-2);
+  border: 1px solid var(--line-dark);
+  border-radius: 3px;
+  color: var(--text-dark);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+}
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+  border-color: var(--brand);
+}
+.form-row--checkbox { display: flex; flex-direction: row; align-items: center; gap: 10px; }
+.form-row--checkbox label { font-size: 13.5px; }
+.contact__form .btn { margin-top: 8px; justify-self: start; }
+.contact__notice {
+  margin-top: 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--brand-2);
+  font-family: var(--font-body);
+}
+
+@media (min-width: 900px) {
+  .contact__grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* =========================================================================
+   푸터
+   ========================================================================= */
+.site-footer {
+  background: var(--ink);
+  color: var(--muted-dark);
+  padding: 48px 0;
+  border-top: 1px solid var(--line-dark);
+}
+/* §K2: 각주류 ≥15px */
+.site-footer p { font-size: 15px; line-height: 1.8; }
+.site-footer__links a:hover { color: var(--text-dark); }
+.site-footer__copy { margin-top: 16px; font-family: var(--font-mono); font-size: 15px; }
+
+/* =========================================================================
+   유틸 / 접근성
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* §O4: 애니메이션을 원치 않는 사용자에게는 스크롤-두루마리 대신 8단계를
+     전부 정적으로 펼쳐 보여준다 — sticky 고정과 mask 페이드를 모두 해제. */
+  .process__sticky-wrap { height: auto !important; }
+  .process__sticky { position: static !important; height: auto !important; }
+  .process__band {
+    overflow: visible !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+  .process__timeline { transform: none !important; }
+}
+
+@media (max-width: 599px) {
+  .section { padding: 80px 0; }
+  .hero { padding-top: calc(var(--header-h) + 24px); }
+  /* §H5: 모바일은 hero-svg 축소 비율이 1440보다 더 크므로(컨테이너 폭이 더 좁음)
+     결함 라벨 글자를 더 키워야 실제 렌더 크기가 유지된다. */
+  .defect-label { font-size: 27px; }
+}
