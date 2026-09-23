@@ -311,11 +311,35 @@
 
     var isMobile = window.matchMedia("(max-width: 899px)").matches;
 
-    if (prefersReduced || isMobile) {
-      // 모바일: sticky 스크롤 연동 대신 정지된 분해 상태 1장, 라벨은 도해에서 숨기고
-      // 아래 목록으로만 제공한다(§3.2 모바일 대체 규칙, §A5). CSS 미디어쿼리가 라벨을
-      // 숨기므로 여기서는 배경/분해만 최종 상태로 고정하면 된다.
+    if (prefersReduced) {
+      // §R1: 모션을 원치 않으면 애니메이션 없이 최종(분해된) 상태로 즉시 표시.
       applyProgress(1);
+      return;
+    }
+
+    if (isMobile) {
+      // §R1: 모바일은 스크롤 연동 대신, 섹션이 40% 이상 뷰포트에 들어오면 합쳐진
+      // 상태(p=0)에서 최대 분해(p=1)까지 1회 자동 재생한다. 라벨은 기존대로 도해에서는
+      // 계속 숨김(§3.2 모바일 대체 규칙 — CSS 미디어쿼리가 처리, applyProgress 안의
+      // visible 토글 자체는 그대로 둬도 display:none 이 이겨서 무해하다). 트리거 직후
+      // unobserve 해서 다시 스크롤을 올렸다 내려도 반복 재생되지 않게 한다(새로고침하면
+      // 다시 재생됨 — observer 가 새로 생성되므로).
+      applyProgress(0);
+      var mobileCounter = { v: 0 };
+      var mobileIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animate(mobileCounter, {
+              v: 1,
+              duration: 1800,
+              ease: "outExpo",
+              onUpdate: function () { applyProgress(mobileCounter.v); }
+            });
+            mobileIo.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.4 });
+      mobileIo.observe(servicesEl || wrap);
       return;
     }
 
